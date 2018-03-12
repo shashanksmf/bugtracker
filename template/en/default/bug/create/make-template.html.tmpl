@@ -1,0 +1,26 @@
+[%# This Source Code Form is subject to the terms of the Mozilla Public
+  # License, v. 2.0. If a copy of the MPL was not distributed with this
+  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  #
+  # This Source Code Form is "Incompatible With Secondary Licenses", as
+  # defined by the Mozilla Public License, v. 2.0.
+  #%]
+
+[%# INTERFACE:
+  # url: URL to a pre-filled bug entry form.
+  #%]
+
+[% PROCESS global/header.html.tmpl
+  title = "Template For $terms.Bug Entry"
+  header = "Template constructed"
+%]
+
+<p>
+  If you bookmark or right-click <a href="enter_bug.cgi?[% url FILTER html %]">
+  this link to the [% terms.Bug %] entry form</a>, and open it repeatedly
+  in a new window, you can bring up multiple copies of the <em>Enter
+  [%+ terms.Bug %]</em> page with the fields initialized in the way you just had
+  them completed. You can then customize each one as necessary.
+</p>
+
+[% PROCESS global/footer.html.tmpl %]

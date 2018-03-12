@@ -1,0 +1,132 @@
+[%# This Source Code Form is subject to the terms of the Mozilla Public
+  # License, v. 2.0. If a copy of the MPL was not distributed with this
+  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  #
+  # This Source Code Form is "Incompatible With Secondary Licenses", as
+  # defined by the Mozilla Public License, v. 2.0.
+  #%]
+
+[%# INTERFACE:
+  # buglistbase: The base query for this table, in URL form
+  # col_field: string. Name of the field being plotted as columns.
+  # row_field: string. Name of the field being plotted as rows.
+  # tbl_field: string. Name of the field being plotted as tables.
+  # col_names: array. List of values for the field being plotted as columns.
+  # row_names: array. List of values for the field being plotted as rows.
+  # data: <depends on format>. Data to plot. Only data.$tbl is accessed. 
+  # tbl: Name of a hash in data which is the table to be plotted.
+  # table_id: the incremented number of the table being displayed.
+  #%]
+
+[% col_field_disp = field_descs.$col_field || col_field %]
+[% row_field_disp = field_descs.$row_field || row_field %]
+
+[% urlbase = BLOCK %]buglist.cgi?[% buglistbase FILTER html %][% END %]
+[% IF tbl == "-total-" %]
+  [% IF tbl_vals %]
+    [% urlbase = urlbase _ "&amp;" _ tbl_vals %]
+  [% END %]
+[% ELSIF tbl_field %]
+  [% urlbase = BLOCK %][% urlbase %]&amp;[% tbl_field FILTER uri %]=[% tbl FILTER uri %][% END %]
+[% END %]
+
+[% IF tbl_field %]
+  <h2>[% tbl_disp FILTER email FILTER html %]</h2>
+[% END %]
+
+[% total_key = '-total-' %]
+[%# Most of these classes are defined in the DataTables plugin itself. %]
+<table id="tabular_report_[% table_id FILTER html %]" class="tabular_report display cell-border compact">
+  <thead>
+    <tr>
+      <th>
+        [% IF col_field %]
+          &darr;&nbsp;[% row_field_disp FILTER html %] \ [% col_field_disp FILTER html %]&nbsp;&rarr;
+        [% ELSE %]
+          [% row_field_disp FILTER html %]
+        [% END %]
+      </th>
+      [% FOREACH col = col_names %]
+        <th>[% PROCESS value_display value = col field = col_field %]</th>
+      [% END %]
+      <th class="ttotal">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+  [% FOREACH row = row_names %]
+    <tr>
+      <td class="right">
+        [% PROCESS value_display value = row field = row_field %]
+      </td>
+      [% FOREACH col = col_names %]
+        [% NEXT IF col == "" %]
+        <td>
+          [% IF data.$tbl.$col.$row AND data.$tbl.$col.$row > 0 %]
+            <a href="[% urlbase %]&amp;
+              [% row_field FILTER uri %]=[% row FILTER uri %]&amp;
+              [% col_field FILTER uri %]=[% col FILTER uri %]">
+              [% data.$tbl.$col.$row %]</a>
+          [% ELSE %]
+            <span class="bz_default_hidden">0</span>
+          [% END %]
+        </td>
+      [% END %]
+      <td class="ttotal right">
+        <a href="[% urlbase %]&amp;
+          [% row_field FILTER uri %]=[% row FILTER uri %]
+          [% "&amp;$col_vals" IF col_vals %]">
+        [% data.$tbl.$total_key.$row OR 0 FILTER html %]</a>
+      </td>
+    </tr>
+  [% END %]
+  </tbody>
+  <tfoot>
+    <tr>
+      <td class="ttotal">Total</td>
+      [% FOREACH col = col_names %]
+        [% NEXT IF col == "" %]
+        <td class="ttotal">
+          <a href="[% urlbase %]&amp;
+            [% col_field FILTER uri %]=[% col FILTER uri %]
+            [% "&amp;$row_vals" IF row_vals %]">
+          [% data.$tbl.$col.$total_key OR 0 FILTER html %]</a>
+        </td>
+      [% END %]
+      <td class="ttotal right">
+        <strong>
+          <a href="[% urlbase %]
+            [% "&amp;$row_vals" IF row_vals %]
+            [% "&amp;$col_vals" IF col_vals %]">[% data.$tbl.$total_key.$total_key OR 0 FILTER html %]</a>
+        </strong>
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $("#tabular_report_[% table_id FILTER html %]").DataTable({
+      order: [],
+      paging: false,
+      scrollY: 600,
+      scrollCollapse: true
+    });
+  });
+</script>
+
+[% IF note_multi_select %]
+  <p class="extra_info">
+    NOTE: Axes contain multi-value fields, so the total numbers might not add up,
+    as a single [% terms.bug %] can match several rows or columns.
+  </p>
+[% END %]
+
+[% BLOCK value_display %]
+  [% SET disp_value = display_value(field, value) %]
+  [% IF field == 'assigned_to' OR field == 'reporter'
+           OR field == 'qa_contact'
+  %]
+    [% disp_value = value FILTER email %]
+  [% END %]
+  [% disp_value FILTER html FILTER replace('^ $','&nbsp;') %]
+[% END %] 
